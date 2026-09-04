@@ -5,7 +5,11 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   nitro: {
-    // Cloudflare Workers 배포용 설정 (다른 프리셋에서는 무시됩니다)
+    // 배포 대상은 Cloudflare Workers 하나뿐이므로 프리셋을 여기에 고정합니다.
+    // 이렇게 해 두면 `npm run build` / `npm run build:cf` / Cloudflare Workers Builds 의
+    // 기본 빌드 명령 중 무엇으로 빌드해도 항상 Workers 산출물이 나옵니다.
+    // (고정하지 않으면 node-server 프리셋으로 빌드되어 wrangler deploy 가 깨집니다)
+    preset: 'cloudflare_module',
     cloudflare: {
       deployConfig: true,
       nodeCompat: true
