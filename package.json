@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
+    "typescript": "^7.0.2",
     "wrangler": "^4.129.0"
   }
 }
