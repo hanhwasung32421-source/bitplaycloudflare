@@ -5,6 +5,11 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   nitro: {
+    // Cloudflare Workers 배포용 설정 (다른 프리셋에서는 무시됩니다)
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true
+    },
     routeRules: {
       // 배포 후에도 오래된 HTML이 캐시되어 "없는 _nuxt 청크"를 요청하는 문제를 줄입니다.
       // - HTML/페이지 응답: 캐시 금지(항상 최신 배포를 받게)

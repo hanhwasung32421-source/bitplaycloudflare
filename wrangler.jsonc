@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bitplay",
+  "compatibility_date": "2025-07-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+
+  // main / assets 는 `nuxt build --preset=cloudflare_module` 이
+  // .output/server/wrangler.json 으로 자동 병합해 넣습니다. 여기 적지 마세요.
+
+  // ── D1 전환 후 주석 해제 ────────────────────────────────
+  // 생성:
+  //   npx wrangler d1 create bitplay-db
+  //   npx wrangler kv namespace create SESSIONS
+  //
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "bitplay-db", "database_id": "<생성 후 붙여넣기>" }
+  // ],
+  // "kv_namespaces": [
+  //   { "binding": "SESSIONS", "id": "<생성 후 붙여넣기>" }
+  // ]
+
+  // ── cron ───────────────────────────────────────────────
+  // vercel.json 의 /api/cron/refresh-krw-rate 대체.
+  // Workers cron 은 HTTP 라우트를 호출하지 않고 scheduled() 핸들러를 부르므로,
+  // Nitro Tasks 를 붙인 뒤에 활성화하세요. 지금 켜면 매일 실패 로그만 쌓입니다.
+  // "triggers": { "crons": ["0 0 * * *"] }
+}

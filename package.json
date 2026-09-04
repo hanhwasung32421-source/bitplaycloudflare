@@ -12,7 +12,10 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "serve": "npm run build && npm run start",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "build:cf": "nuxt build --preset=cloudflare_module",
+    "deploy:cf": "npm run build:cf && wrangler deploy",
+    "preview:cf": "npm run build:cf && wrangler dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -24,6 +27,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.14.0"
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "wrangler": "^4.129.0"
   }
 }

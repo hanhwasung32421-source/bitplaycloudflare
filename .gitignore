@@ -32,3 +32,6 @@ Thumbs.db
 
 .vercel
 .env*
+
+# Cloudflare Wrangler
+.wrangler
