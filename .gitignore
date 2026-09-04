@@ -1,0 +1,34 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+data
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+backup/
+참고/
+
+# Local env files
+.env
+.env.*
+!.env.example
+vercel.env.local
+
+# OS / tools
+Thumbs.db
+
+.vercel
+.env*

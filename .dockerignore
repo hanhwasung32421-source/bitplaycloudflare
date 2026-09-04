@@ -1,0 +1,10 @@
+node_modules
+.nuxt
+.output
+.data
+.nitro
+.cache
+data
+*.log
+.env
+.env.*

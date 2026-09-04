@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-krw-rate",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
