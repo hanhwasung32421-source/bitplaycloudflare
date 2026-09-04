@@ -3,22 +3,26 @@
   "name": "bitplay",
   "compatibility_date": "2025-07-15",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
 
   // main / assets 는 `nuxt build --preset=cloudflare_module` 이
   // .output/server/wrangler.json 으로 자동 병합해 넣습니다. 여기 적지 마세요.
 
-  // ── D1 전환 후 주석 해제 ────────────────────────────────
-  // 생성:
-  //   npx wrangler d1 create bitplay-db
-  //   npx wrangler kv namespace create SESSIONS
-  //
-  // "d1_databases": [
-  //   { "binding": "DB", "database_name": "bitplay-db", "database_id": "<생성 후 붙여넣기>" }
-  // ],
-  // "kv_namespaces": [
-  //   { "binding": "SESSIONS", "id": "<생성 후 붙여넣기>" }
-  // ]
+  // ── D1 / KV 바인딩 ────────────────────────
+  // 2026-09-04 생성됨 (D1 위치: APAC)
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bitplay-db",
+      "database_id": "08cad024-68b7-44d7-9e0f-1376d2b8cb01"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSIONS",
+      "id": "4433a0e921bf475b90fd573e9b2ab960"
+    }
+  ]
 
   // ── cron ───────────────────────────────────────────────
   // vercel.json 의 /api/cron/refresh-krw-rate 대체.
