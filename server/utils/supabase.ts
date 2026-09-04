@@ -18,7 +18,7 @@ export function isMissingTableError(_error: any): boolean {
   return false
 }
 
-export function getSupabaseAdminClient(): never {
+export function getSupabaseAdminClient(): any {
   throw new Error(DISABLED)
 }
 
@@ -29,19 +29,19 @@ export async function supaUpsertStrict(_table: string, _payload: any, _onConflic
 export async function supaUpsertUserSettings(_payload: any): Promise<void> {}
 export async function ensureAdminExists(..._args: any[]): Promise<void> {}
 export async function supaDelete(..._args: any[]): Promise<void> {}
-export async function supaCount(..._args: any[]): Promise<number> {
+export async function supaCount<T = any>(..._args: any[]): Promise<number> {
   return 0
 }
-export async function supaSelectAll<T = any>(..._args: any[]): Promise<T[]> {
+export async function supaSelectAll<T = any>(..._args: any[]): Promise<any[]> {
   return []
 }
-export async function supaSelectWhere<T = any>(..._args: any[]): Promise<T[]> {
+export async function supaSelectWhere<T = any>(..._args: any[]): Promise<any[]> {
   return []
 }
-export async function supaSelectOne<T = any>(..._args: any[]): Promise<T | null> {
+export async function supaSelectOne<T = any>(..._args: any[]): Promise<any> {
   return null
 }
 export async function supaUpdate(..._args: any[]): Promise<void> {}
-export async function supaSelectIn<T = any>(..._args: any[]): Promise<T[]> {
+export async function supaSelectIn<T = any>(..._args: any[]): Promise<any[]> {
   return []
 }

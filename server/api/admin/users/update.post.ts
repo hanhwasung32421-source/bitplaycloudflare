@@ -67,7 +67,7 @@ async function handleUpdate(event: any) {
   //  이후 잔액을 제외한 다른 필드는— 이름/역할/정산비율 등— 바꿀 수 없다.)
   const targetRole = useSupa
     ? String((await supaSelectOne<any>('trae_users', { id: body.userId }))?.role || '')
-    : String((getDb().prepare('SELECT role FROM users WHERE id = ?').get(body.userId) as { role?: string } | undefined)?.role || '')
+    : String((await getDb().prepare('SELECT role FROM users WHERE id = ?').get(body.userId) as { role?: string } | undefined)?.role || '')
   const isLockedSuperAdmin = targetRole === 'super_admin'
   function assertNotLockedSuperAdmin() {
     if (isLockedSuperAdmin) {
@@ -199,14 +199,14 @@ async function handleUpdate(event: any) {
     assertNotLockedSuperAdmin()
     // 아이디(로그인 계정명) 변경은 총관리자만, 중복 확인 필요
     await requireSuperAdmin(event)
-    const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(body.username, body.userId) as
+    const existing = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(body.username, body.userId) as
       | { id: number }
       | undefined
     if (existing?.id) {
       throw createError({ statusCode: 409, statusMessage: '이미 사용 중인 아이디입니다.' })
     }
-    db.prepare('UPDATE users SET username = ?, updated_at = ? WHERE id = ?').run(body.username, new Date().toISOString(), body.userId)
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+    await db.prepare('UPDATE users SET username = ?, updated_at = ? WHERE id = ?').run(body.username, new Date().toISOString(), body.userId)
+    const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
     await syncUserToSupabase(userRow)
   }
 
@@ -214,15 +214,15 @@ async function handleUpdate(event: any) {
     if (!canEditMenu(admin, 'members')) {
       throw createError({ statusCode: 403, statusMessage: '보유금액 수정 권한이 없습니다.' })
     }
-    db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(body.userId, 0)
-    db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(body.usdt, body.userId)
+    await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(body.userId, 0)
+    await db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(body.usdt, body.userId)
 
     await syncBalanceToSupabase(body.userId, body.usdt)
   }
 
   if (body.role) {
     // 역할이 실제로 바뀔 때만 권한(permissions)을 역할 기본값으로 초기화한다(위 Supabase 분기와 동일한 이유).
-    const current = db.prepare('SELECT role, referral_code FROM users WHERE id = ?').get(body.userId) as
+    const current = await db.prepare('SELECT role, referral_code FROM users WHERE id = ?').get(body.userId) as
       | { role?: string; referral_code?: string }
       | undefined
     if (current && String(current.role) !== body.role) {
@@ -236,9 +236,9 @@ async function handleUpdate(event: any) {
       }
       const permissions = JSON.stringify(await resolveRolePermissions(body.role))
 
-      db.prepare('UPDATE users SET role = ?, permissions = ? WHERE id = ?').run(body.role, permissions, body.userId)
+      await db.prepare('UPDATE users SET role = ?, permissions = ? WHERE id = ?').run(body.role, permissions, body.userId)
 
-      const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+      const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
       await syncUserToSupabase(userRow)
     }
   }
@@ -251,7 +251,7 @@ async function handleUpdate(event: any) {
     typeof body.accountHolder === 'string'
   ) {
     assertNotLockedSuperAdmin()
-    db.prepare(
+    await db.prepare(
       `UPDATE users
        SET name = COALESCE(?, name),
            birth_date = COALESCE(?, birth_date),
@@ -269,7 +269,7 @@ async function handleUpdate(event: any) {
       new Date().toISOString(),
       body.userId
     )
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+    const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
     await syncUserToSupabase(userRow)
   }
 
@@ -277,12 +277,12 @@ async function handleUpdate(event: any) {
     assertNotLockedSuperAdmin()
     // 추천코드 수정은 총관리자만
     await requireSuperAdmin(event)
-    db.prepare('UPDATE users SET referral_code = ?, updated_at = ? WHERE id = ?').run(
+    await db.prepare('UPDATE users SET referral_code = ?, updated_at = ? WHERE id = ?').run(
       body.referralCode.trim(),
       new Date().toISOString(),
       body.userId
     )
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+    const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
     await syncUserToSupabase(userRow)
   }
 
@@ -290,7 +290,7 @@ async function handleUpdate(event: any) {
     assertNotLockedSuperAdmin()
     // 정산유형(손실정산/레퍼럴정산) 지정은 총관리자만. 부관리자 1명당 하나만 배정된다.
     await requireSuperAdmin(event)
-    const row = db.prepare('SELECT permissions FROM users WHERE id = ?').get(body.userId) as { permissions?: string } | undefined
+    const row = await db.prepare('SELECT permissions FROM users WHERE id = ?').get(body.userId) as { permissions?: string } | undefined
     let prevPermissions: any = {}
     try {
       prevPermissions = JSON.parse(row?.permissions || '{}')
@@ -299,20 +299,20 @@ async function handleUpdate(event: any) {
     }
     delete prevPermissions.settlementTypes
     const permissions = { ...prevPermissions, settlementType: body.settlementType }
-    db.prepare('UPDATE users SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(permissions), new Date().toISOString(), body.userId)
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+    await db.prepare('UPDATE users SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(permissions), new Date().toISOString(), body.userId)
+    const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
     await syncUserToSupabase(userRow)
   }
 
   if (body.settlementPercent !== undefined) {
     assertNotLockedSuperAdmin()
     // 정산 비율 지정: 총관리자는 누구든, 관리자 역할 계정은 자기 직속 하부(본인 코드로 가입한 관리자)만 가능.
-    const targetRow = db.prepare('SELECT referral_code FROM users WHERE id = ?').get(body.userId) as { referral_code?: string } | undefined
+    const targetRow = await db.prepare('SELECT referral_code FROM users WHERE id = ?').get(body.userId) as { referral_code?: string } | undefined
     const isDirectChild = isAdminRole(admin.role) && String(targetRow?.referral_code || '').trim() === admin.username
     if (!isDirectChild) {
       await requireSuperAdmin(event)
     }
-    const row = db.prepare('SELECT permissions FROM users WHERE id = ?').get(body.userId) as { permissions?: string } | undefined
+    const row = await db.prepare('SELECT permissions FROM users WHERE id = ?').get(body.userId) as { permissions?: string } | undefined
     let prevPermissions: any = {}
     try {
       prevPermissions = JSON.parse(row?.permissions || '{}')
@@ -320,8 +320,8 @@ async function handleUpdate(event: any) {
       prevPermissions = {}
     }
     const permissions = { ...prevPermissions, settlementPercent: body.settlementPercent }
-    db.prepare('UPDATE users SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(permissions), new Date().toISOString(), body.userId)
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+    await db.prepare('UPDATE users SET permissions = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(permissions), new Date().toISOString(), body.userId)
+    const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
     await syncUserToSupabase(userRow)
   }
 

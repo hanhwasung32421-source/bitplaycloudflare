@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const user = db
+  const user = await db
     .prepare('SELECT id, password_hash, role FROM users WHERE username = ?')
     .get(body.username) as { id: number; password_hash: string; role: string } | undefined
 

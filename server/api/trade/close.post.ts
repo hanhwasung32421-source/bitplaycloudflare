@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const pos = db
+  const pos = await db
     .prepare('SELECT * FROM positions WHERE id = ? AND user_id = ?')
     .get(body.positionId, user.id) as
     | { id: number; symbol: string; side: string; qty: number; entry_price: number; leverage: number; margin: number }
@@ -131,12 +131,12 @@ export default defineEventHandler(async (event) => {
   const { settlementAfterFee } = calcSettlementAfterFee(gross, pnl)
 
   // 잔고: 증거금 반환 + 손익 반영
-  db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
-  db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(settlementAfterFee, user.id)
+  await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
+  await db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(settlementAfterFee, user.id)
 
-  db.prepare('DELETE FROM positions WHERE id = ? AND user_id = ?').run(pos.id, user.id)
+  await db.prepare('DELETE FROM positions WHERE id = ? AND user_id = ?').run(pos.id, user.id)
 
-  db.prepare(
+  await db.prepare(
     'INSERT INTO trades (user_id, symbol, side, qty, entry_price, exit_price, leverage, pnl, liquidation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     user.id,
@@ -151,8 +151,8 @@ export default defineEventHandler(async (event) => {
     new Date().toISOString()
   )
 
-  const newTrade = db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
-  const bal = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any
+  const newTrade = await db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
+  const bal = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any
   await safeRun(() => syncTradeToSupabase(newTrade))
   await safeRun(() => syncBalanceToSupabase(user.id, Number(bal?.usdt ?? 0)))
 

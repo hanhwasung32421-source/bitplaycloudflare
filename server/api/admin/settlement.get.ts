@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const allUsers = db.prepare('SELECT id, username, name, referral_code, role FROM users').all() as any[]
+  const allUsers = await db.prepare('SELECT id, username, name, referral_code, role FROM users').all() as any[]
   const downline = scopeToReferral
     ? computeDownlineUsernames(scopeToReferral, allUsers.map((u) => ({ username: u.username, referralCode: u.referral_code })))
     : null
@@ -126,11 +126,11 @@ export default defineEventHandler(async (event) => {
   const ids = users.map((u: any) => Number(u.id))
   if (!ids.length) return { items: [], total: 0, percent, from, to, krwPerUsdt }
 
-  const balances = db.prepare('SELECT user_id, usdt FROM balances').all() as any[]
+  const balances = await db.prepare('SELECT user_id, usdt FROM balances').all() as any[]
   const balanceMap = new Map(balances.map((b: any) => [Number(b.user_id), Number(b.usdt ?? 0)]))
 
   const placeholders = ids.map(() => '?').join(',')
-  const trades = db
+  const trades = await db
     .prepare(
       `SELECT user_id, pnl, entry_price, qty, leverage, created_at FROM trades
        WHERE user_id IN (${placeholders}) AND created_at >= ? AND created_at <= ?`

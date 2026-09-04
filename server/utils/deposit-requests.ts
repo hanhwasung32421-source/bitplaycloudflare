@@ -53,7 +53,7 @@ export async function createDepositRequest(
   }
 
   const db = getDb()
-  const result = db
+  const result = await db
     .prepare('INSERT INTO deposit_requests (user_id, type, krw_amount, status, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(userId, type, krwAmount, 'pending', createdAt)
   return {
@@ -80,7 +80,7 @@ export async function listDepositRequests(userIds: number[]): Promise<DepositReq
 
   const db = getDb()
   const placeholders = userIds.map(() => '?').join(',')
-  const rows = db
+  const rows = await db
     .prepare(`SELECT * FROM deposit_requests WHERE user_id IN (${placeholders}) ORDER BY id DESC`)
     .all(...userIds) as any[]
   return rows.map(rowToDepositRequest)
@@ -94,7 +94,7 @@ export async function getDepositRequest(id: number): Promise<DepositRequest | nu
     return data ? rowToDepositRequest(data) : null
   }
   const db = getDb()
-  const row = db.prepare('SELECT * FROM deposit_requests WHERE id = ?').get(id) as any
+  const row = await db.prepare('SELECT * FROM deposit_requests WHERE id = ?').get(id) as any
   return row ? rowToDepositRequest(row) : null
 }
 
@@ -116,7 +116,7 @@ export async function resolveDepositRequest(
   }
 
   const db = getDb()
-  db.prepare('UPDATE deposit_requests SET status = ?, usdt_amount = COALESCE(?, usdt_amount), rate_used = COALESCE(?, rate_used), resolved_at = ? WHERE id = ?').run(
+  await db.prepare('UPDATE deposit_requests SET status = ?, usdt_amount = COALESCE(?, usdt_amount), rate_used = COALESCE(?, rate_used), resolved_at = ? WHERE id = ?').run(
     status,
     extra?.usdtAmount ?? null,
     extra?.rateUsed ?? null,

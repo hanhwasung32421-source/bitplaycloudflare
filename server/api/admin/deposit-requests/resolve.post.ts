@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
   if (admin.role !== 'super_admin') {
     const targetUsername = useSupa
       ? String((await supaSelectOne<any>('trae_users', { id: req.userId }))?.username || '')
-      : String((getDb().prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as any)?.username || '')
+      : String((await getDb().prepare('SELECT username FROM users WHERE id = ?').get(req.userId) as any)?.username || '')
     const downline = await fetchDownlineUsernames(admin.username)
     if (!downline.has(targetUsername)) {
       throw createError({ statusCode: 403, statusMessage: '이 회원의 요청을 처리할 권한이 없습니다.' })
@@ -61,14 +61,14 @@ export default defineEventHandler(async (event) => {
     if (error) throw error
   } else {
     const db = getDb()
-    db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(req.userId, 0)
-    const bal = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(req.userId) as any
+    await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(req.userId, 0)
+    const bal = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(req.userId) as any
     const prev = Number(bal?.usdt ?? 0)
     if (req.type === 'withdrawal' && prev < usdtAmount) {
       throw createError({ statusCode: 400, statusMessage: '해당 회원의 잔고가 부족하여 출금을 완료할 수 없습니다.' })
     }
-    db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(delta, req.userId)
-    const updated = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(req.userId) as any
+    await db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(delta, req.userId)
+    const updated = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(req.userId) as any
     await syncBalanceToSupabase(req.userId, Number(updated?.usdt ?? 0))
   }
 

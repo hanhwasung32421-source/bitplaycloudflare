@@ -46,7 +46,7 @@ export async function fetchDownlineUsernames(root: string): Promise<Set<string>>
     edges = (data || []).map((u: any) => ({ username: String(u.username || ''), referralCode: String(u.referral_code || '') }))
   } else {
     const db = getDb()
-    const rows = db.prepare('SELECT username, referral_code FROM users').all() as any[]
+    const rows = await db.prepare('SELECT username, referral_code FROM users').all() as any[]
     edges = rows.map((u) => ({ username: String(u.username || ''), referralCode: String(u.referral_code || '') }))
   }
   return computeDownlineUsernames(root, edges)

@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     const db = getDb()
-    const positions = db.prepare('SELECT * FROM positions WHERE symbol = ?').all(symbol) as any[]
+    const positions = await db.prepare('SELECT * FROM positions WHERE symbol = ?').all(symbol) as any[]
     for (const pos of positions) {
       const entry = Number(pos.entry_price)
       const lev = Number(pos.leverage || 1)
@@ -95,8 +95,8 @@ export default defineEventHandler(async (event) => {
       const net = margin * (1 - FEE_RATE)
       const pnl = -net
 
-      db.prepare('DELETE FROM positions WHERE id = ?').run(pos.id)
-      db.prepare(
+      await db.prepare('DELETE FROM positions WHERE id = ?').run(pos.id)
+      await db.prepare(
         'INSERT INTO trades (user_id, symbol, side, qty, entry_price, exit_price, leverage, pnl, liquidation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
       ).run(pos.user_id, symbol, pos.side, pos.qty, entry, liqPrice, lev, pnl, 1, new Date().toISOString())
       liquidatedCount += 1

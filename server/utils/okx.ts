@@ -13,11 +13,20 @@ function toInstId(symbol: string) {
   return 'BTC-USDT-SWAP'
 }
 
+import { okxFetch } from '../upstream/okx-fetch'
+
+/**
+ * 마지막 체결가. 포지션 개시/청산 시 서버가 기준가로 사용합니다.
+ * 429 대응(캐시/재시도/스테일 폴백)은 okxFetch 가 담당합니다.
+ */
 export async function getOkxLastPrice(symbol: string) {
   const instId = toInstId(symbol)
-  const res = await $fetch<any>('https://www.okx.com/api/v5/market/ticker', {
-    query: { instId }
-  })
+  const res = await okxFetch<any>(
+    'https://www.okx.com/api/v5/market/ticker',
+    { instId },
+    { freshMs: 1000, staleMs: 15000 }
+  ).catch(() => null)
+
   const last = Number(res?.data?.[0]?.last ?? NaN)
   if (!Number.isFinite(last)) {
     throw createError({ statusCode: 502, statusMessage: '시세 조회 실패' })

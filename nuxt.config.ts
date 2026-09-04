@@ -27,18 +27,10 @@ export default defineNuxtConfig({
     }
   },
   runtimeConfig: {
-    // 서버 전용
+    // 서버 전용 세션 서명 키. Cloudflare 대시보드의 Secret 으로 주입하세요.
     sessionSecret: process.env.SESSION_SECRET || 'dev-secret-change-me',
-    // 서버 전용: Supabase service role (절대 public에 넣지 마세요)
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-    // 서버 전용: 앱 DB를 Supabase로 동기화(복원/미러)할지 여부
-    supabaseAppDbEnabled: process.env.SUPABASE_APP_DB_ENABLED || '',
     public: {
-      appName: 'BITPLAY',
-      supabaseUrl: process.env.SUPABASE_URL || 'https://dyfycrmltqosezmsufup.supabase.co',
-      supabaseAnonKey:
-        process.env.SUPABASE_ANON_KEY ||
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5Znljcm1sdHFvc2V6bXN1ZnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMzg4MDIsImV4cCI6MjA5NTYxNDgwMn0.VpJCBdD1g8YZiaa6Zah9ZKIu3ydu_RkSgWCdEXe2QGw'
+      appName: 'BITPLAY'
     }
   }
 })

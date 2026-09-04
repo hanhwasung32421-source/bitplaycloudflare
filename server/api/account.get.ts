@@ -84,27 +84,27 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const bal = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number } | undefined
+  const bal = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number } | undefined
 
   // 사용자 거래 설정(비중/레버리지) - 없으면 기본값으로 생성
-  db.prepare('INSERT OR IGNORE INTO user_settings (user_id, trade_percent, trade_leverage, chart_prefs, updated_at) VALUES (?, ?, ?, ?, ?)').run(
+  await db.prepare('INSERT OR IGNORE INTO user_settings (user_id, trade_percent, trade_leverage, chart_prefs, updated_at) VALUES (?, ?, ?, ?, ?)').run(
     user.id,
     50,
     100,
     '{}',
     new Date().toISOString()
   )
-  const settings = db
+  const settings = await db
     .prepare('SELECT trade_percent, trade_leverage, chart_prefs FROM user_settings WHERE user_id = ?')
     .get(user.id) as { trade_percent: number; trade_leverage: number; chart_prefs?: string } | undefined
 
-  const positions = db
+  const positions = await db
     .prepare('SELECT * FROM positions WHERE user_id = ? ORDER BY id DESC')
     .all(user.id) as any[]
-  const trades = db
+  const trades = await db
     .prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT 50')
     .all(user.id) as any[]
-  const cards = db
+  const cards = await db
     .prepare(
       `SELECT pc.id, pc.title, pc.note, pc.created_at, t.symbol, t.side, t.qty, t.pnl, t.entry_price, t.exit_price
        FROM profit_cards pc

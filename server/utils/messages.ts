@@ -50,7 +50,7 @@ export async function getOperatorAdminUser() {
   }
 
   const db = getDb()
-  const row = db
+  const row = await db
     .prepare(`SELECT id, username FROM users WHERE username = ? OR role = 'super_admin' ORDER BY CASE WHEN username = 'admin' THEN 0 ELSE 1 END, id ASC LIMIT 1`)
     .get('admin') as any
   if (!row) return null
@@ -105,7 +105,7 @@ export async function listMessageRecipientsForAdmin() {
   }
 
   const db = getDb()
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT u.id, u.username, u.name, u.role, u.created_at, b.usdt
        FROM users u
@@ -142,7 +142,7 @@ export async function listUsersByIds(ids: number[]) {
 
   const db = getDb()
   const placeholders = uniq.map(() => '?').join(', ')
-  const rows = db.prepare(`SELECT id, username, role FROM users WHERE id IN (${placeholders})`).all(...uniq) as any[]
+  const rows = await db.prepare(`SELECT id, username, role FROM users WHERE id IN (${placeholders})`).all(...uniq) as any[]
   return new Map(rows.map((u) => [Number(u.id), { id: Number(u.id), username: String(u.username || ''), role: String(u.role || 'user') }]))
 }
 
@@ -174,7 +174,7 @@ export async function insertMessages(rows: Array<Omit<MessageRow, 'id' | 'create
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   )
   for (const row of payload) {
-    stmt.run(row.id, row.thread_key, row.sender_id, row.recipient_id, row.subject, row.body, row.read_at, row.created_at)
+    await stmt.run(row.id, row.thread_key, row.sender_id, row.recipient_id, row.subject, row.body, row.read_at, row.created_at)
   }
   return payload
 }
@@ -202,7 +202,7 @@ export async function getThreadMessages(threadKey: string) {
   }
 
   const db = getDb()
-  const rows = db.prepare(`SELECT * FROM messages WHERE thread_key = ? ORDER BY created_at ASC`).all(threadKey) as any[]
+  const rows = await db.prepare(`SELECT * FROM messages WHERE thread_key = ? ORDER BY created_at ASC`).all(threadKey) as any[]
   return rows.map((m) => ({
     id: Number(m.id),
     thread_key: String(m.thread_key),
@@ -232,8 +232,8 @@ export async function getThreadsForUser(user: SessionUser) {
 
   const db = getDb()
   const rows = isAdmin
-    ? (db.prepare(`SELECT * FROM messages ORDER BY created_at DESC LIMIT 3000`).all() as any[])
-    : (db.prepare(`SELECT * FROM messages WHERE thread_key = ? ORDER BY created_at DESC LIMIT 3000`).all(threadKeyForUser(user.id)) as any[])
+    ? (await db.prepare(`SELECT * FROM messages ORDER BY created_at DESC LIMIT 3000`).all() as any[])
+    : (await db.prepare(`SELECT * FROM messages WHERE thread_key = ? ORDER BY created_at DESC LIMIT 3000`).all(threadKeyForUser(user.id)) as any[])
   return normalizeThreadSummaries(rows, user.id)
 }
 
@@ -285,7 +285,7 @@ export async function markThreadAsRead(threadKey: string, userId: number) {
   }
 
   const db = getDb()
-  db.prepare(`UPDATE messages SET read_at = ? WHERE thread_key = ? AND recipient_id = ? AND read_at IS NULL`).run(readAt, threadKey, Number(userId))
+  await db.prepare(`UPDATE messages SET read_at = ? WHERE thread_key = ? AND recipient_id = ? AND read_at IS NULL`).run(readAt, threadKey, Number(userId))
 }
 
 export async function countUnreadMessages(userId: number) {
@@ -304,7 +304,7 @@ export async function countUnreadMessages(userId: number) {
   }
 
   const db = getDb()
-  const row = db.prepare(`SELECT COUNT(*) as c FROM messages WHERE recipient_id = ? AND read_at IS NULL`).get(Number(userId)) as any
+  const row = await db.prepare(`SELECT COUNT(*) as c FROM messages WHERE recipient_id = ? AND read_at IS NULL`).get(Number(userId)) as any
   return Number(row?.c || 0)
 }
 

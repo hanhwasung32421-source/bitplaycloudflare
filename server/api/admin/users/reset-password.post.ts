@@ -34,15 +34,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const row = db.prepare('SELECT username FROM users WHERE id = ?').get(body.userId) as { username?: string } | undefined
+  const row = await db.prepare('SELECT username FROM users WHERE id = ?').get(body.userId) as { username?: string } | undefined
   if (!row?.username) throw createError({ statusCode: 404, statusMessage: '유저를 찾을 수 없습니다.' })
 
   const passwordHash = hashPassword(row.username)
-  db.prepare(
+  await db.prepare(
     'UPDATE users SET password_hash = ?, password_reset_required = 1, password_reset_notice_dismissed_at = NULL, updated_at = ? WHERE id = ?'
   ).run(passwordHash, now, body.userId)
 
-  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
+  const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(body.userId) as any
   await syncUserToSupabase(userRow)
 
   return { ok: true }

@@ -30,12 +30,12 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const trade = db
+  const trade = await db
     .prepare('SELECT id FROM trades WHERE id = ? AND user_id = ?')
     .get(body.tradeId, user.id) as { id: number } | undefined
   if (!trade) throw createError({ statusCode: 404, statusMessage: '거래를 찾을 수 없습니다.' })
 
-  db.prepare('INSERT INTO profit_cards (user_id, trade_id, title, note, created_at) VALUES (?, ?, ?, ?, ?)').run(
+  await db.prepare('INSERT INTO profit_cards (user_id, trade_id, title, note, created_at) VALUES (?, ?, ?, ?, ?)').run(
     user.id,
     body.tradeId,
     body.title,
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     new Date().toISOString()
   )
 
-  const row = db.prepare('SELECT * FROM profit_cards WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
+  const row = await db.prepare('SELECT * FROM profit_cards WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
   await syncProfitCardToSupabase(row)
 
   return { ok: true }

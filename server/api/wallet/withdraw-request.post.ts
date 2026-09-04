@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const balance = supabaseAppDbEnabled()
       ? Number((await supaSelectOne<any>('trae_balances', { user_id: user.id }))?.usdt ?? 0)
-      : Number((getDb().prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any)?.usdt ?? 0)
+      : Number((await getDb().prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any)?.usdt ?? 0)
 
     const rate = await resolveKrwPerUsdtRate()
     if (!(rate > 0)) {

@@ -31,11 +31,11 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(body.userId, 0)
-  db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(body.amount, body.userId)
+  await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(body.userId, 0)
+  await db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(body.amount, body.userId)
 
   await logAdminCredit({ adminUserId: admin.id, userId: body.userId, amount: body.amount })
-  const bal = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(body.userId) as any
+  const bal = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(body.userId) as any
   await syncBalanceToSupabase(body.userId, Number(bal?.usdt ?? 0))
   return { ok: true }
 })

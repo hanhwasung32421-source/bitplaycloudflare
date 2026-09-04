@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const rows = db
+  const rows = await db
     .prepare(
       `
       SELECT u.id, u.username, u.name, u.referral_code, u.bank_name, u.bank_account, u.account_holder, u.role, u.permissions, u.created_at, b.usdt

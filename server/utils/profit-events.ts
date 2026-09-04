@@ -81,7 +81,7 @@ export async function createProfitEvent(input: {
   }
 
   const db = getDb()
-  const result = db
+  const result = await db
     .prepare(
       'INSERT INTO profit_events (symbol, direction, percent, base_price, shocked_price, duration_ms, tick_count, hold_ms, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )
@@ -114,7 +114,7 @@ export async function latestProfitEvent(symbol: string): Promise<ProfitEvent | n
     }
   }
   const db = getDb()
-  const row = db.prepare('SELECT * FROM profit_events WHERE symbol = ? ORDER BY id DESC LIMIT 1').get(sym) as any
+  const row = await db.prepare('SELECT * FROM profit_events WHERE symbol = ? ORDER BY id DESC LIMIT 1').get(sym) as any
   return row ? rowToProfitEvent(row) : null
 }
 
@@ -131,7 +131,7 @@ export async function listProfitEvents(symbol: string, limit = 200): Promise<Pro
     }
   }
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM profit_events WHERE symbol = ? ORDER BY id DESC LIMIT ?').all(sym, limit) as any[]
+  const rows = await db.prepare('SELECT * FROM profit_events WHERE symbol = ? ORDER BY id DESC LIMIT ?').all(sym, limit) as any[]
   return rows.map(rowToProfitEvent)
 }
 
@@ -147,7 +147,7 @@ export async function listAllProfitEvents(limit = 100): Promise<ProfitEvent[]> {
     }
   }
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM profit_events ORDER BY id DESC LIMIT ?').all(limit) as any[]
+  const rows = await db.prepare('SELECT * FROM profit_events ORDER BY id DESC LIMIT ?').all(limit) as any[]
   return rows.map(rowToProfitEvent)
 }
 
@@ -157,5 +157,5 @@ export async function deleteProfitEvent(id: number): Promise<void> {
     return
   }
   const db = getDb()
-  db.prepare('DELETE FROM profit_events WHERE id = ?').run(id)
+  await db.prepare('DELETE FROM profit_events WHERE id = ?').run(id)
 }

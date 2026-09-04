@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   const username = supabaseAppDbEnabled()
     ? String((await supaSelectOne<any>('trae_users', { id: body.userId }))?.username || '')
-    : String((getDb().prepare('SELECT username FROM users WHERE id = ?').get(body.userId) as any)?.username || '')
+    : String((await getDb().prepare('SELECT username FROM users WHERE id = ?').get(body.userId) as any)?.username || '')
 
   if (!username) {
     throw createError({ statusCode: 404, statusMessage: '유저를 찾을 수 없습니다.' })

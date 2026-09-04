@@ -1215,6 +1215,7 @@
 </template>
 
 <script setup lang="ts">
+import { fetchOkxCandles, fetchOkxBooks } from '~/utils/okxClient'
 import {
   createChart,
   CandlestickSeries,
@@ -4587,9 +4588,7 @@ async function backfillOlderCandles(
   while (have < neededBars && loops < 80) {
     if (token !== candlesFetchToken) return // 그 사이 심볼/타임프레임이 바뀌면 중단
     const batchSize = Math.min(100, neededBars - have)
-    const res = await $fetch<any>('/api/okx/candles', {
-      query: { instId, bar, limit: batchSize, after: afterCursor }
-    }).catch(() => null)
+    const res = await fetchOkxCandles({ instId, bar, limit: batchSize, after: afterCursor }).catch(() => null)
     const batch = (res?.data || []) as string[][]
     if (!batch.length) break
     olderRows.push(...batch)
@@ -4636,7 +4635,7 @@ async function fetchCandles() {
   // 1) 최신 봉부터 먼저 한 번에 받아 바로 그린다(체감 로딩 속도를 예전 수준으로 유지).
   //    킬/수익손실 이벤트 목록도 같이 받아서, 예전에 생긴 고가/저가(꼬리)를 다시 그려 넣는다.
   const [firstRes, killEvents, profitEvents] = await Promise.all([
-    $fetch<any>('/api/okx/candles', { query: { instId, bar, limit: Math.min(300, neededBars) } }),
+    fetchOkxCandles({ instId, bar, limit: Math.min(300, neededBars) }),
     fetchKillEventsFor(sym),
     fetchProfitEventsFor(sym)
   ])
@@ -4690,7 +4689,7 @@ async function refreshOrderbookFromRest() {
   orderbookRefreshing = true
   try {
     const instId = toInstId(symbol.value)
-    const res = await $fetch<any>('/api/okx/books', { query: { instId, sz: 20 } })
+    const res = await fetchOkxBooks(instId, 20)
     const data = res?.data
     if (!data) return false
     // REST는 스냅샷이므로 전체 재구성

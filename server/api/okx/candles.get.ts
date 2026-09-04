@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { okxFetch } from '../../upstream/okx-fetch'
 
 const QuerySchema = z.object({
   instId: z.string().min(1),
@@ -19,14 +20,22 @@ export default defineEventHandler(async (event) => {
     ? 'https://www.okx.com/api/v5/market/history-candles'
     : 'https://www.okx.com/api/v5/market/candles'
   const limit = Math.min(q.limit ?? 120, useHistory ? 100 : 300)
-  const res = await $fetch<any>(url, {
-    query: {
+
+  // 과거 구간은 더 이상 변하지 않으므로 길게 캐시한다. 차트가 과거로 스크롤할 때
+  // 같은 구간을 반복 요청하는데, 이게 429의 주된 원인이었다.
+  const ttl = useHistory
+    ? { freshMs: 600000, staleMs: 3600000 }
+    : { freshMs: 3000, staleMs: 60000 }
+
+  return await okxFetch<any>(
+    url,
+    {
       instId: q.instId,
       bar: q.bar,
       limit,
       ...(q.after ? { after: q.after } : {}),
       ...(q.before ? { before: q.before } : {})
-    }
-  })
-  return res
+    },
+    ttl
+  )
 })

@@ -18,7 +18,7 @@ export async function getLiquidationRoe(): Promise<number> {
   }
 
   const db = getDb()
-  const row = db.prepare('SELECT liquidation_roe FROM system_settings WHERE id = 1').get() as
+  const row = await db.prepare('SELECT liquidation_roe FROM system_settings WHERE id = 1').get() as
     | { liquidation_roe?: number }
     | undefined
   return Number.isFinite(Number(row?.liquidation_roe)) ? Number(row!.liquidation_roe) : DEFAULT_LIQUIDATION_ROE
@@ -35,7 +35,7 @@ export async function setLiquidationRoe(value: number): Promise<number> {
   }
 
   const db = getDb()
-  db.prepare(
+  await db.prepare(
     `INSERT INTO system_settings (id, liquidation_roe, updated_at) VALUES (1, ?, ?)
      ON CONFLICT(id) DO UPDATE SET liquidation_roe = excluded.liquidation_roe, updated_at = excluded.updated_at`
   ).run(v, now)
@@ -146,7 +146,7 @@ export async function getSystemSettingsExtra(): Promise<SystemSettingsExtra> {
     }
   }
   const db = getDb()
-  const row = db
+  const row = await db
     .prepare(
       'SELECT telegram_url, krw_per_usdt, loss_settlement_percent, referral_settlement_percent, menu_order, main_nav_order, main_nav_hidden FROM system_settings WHERE id = 1'
     )
@@ -185,7 +185,7 @@ export async function updateSystemSettingsExtra(patch: Partial<SystemSettingsExt
   }
 
   const db = getDb()
-  db.prepare(
+  await db.prepare(
     `INSERT INTO system_settings (id, telegram_url, krw_per_usdt, loss_settlement_percent, referral_settlement_percent, menu_order, main_nav_order, main_nav_hidden, updated_at)
      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
@@ -232,7 +232,7 @@ async function readDailyRateRow(): Promise<DailyRateRow> {
     }
   }
   const db = getDb()
-  const row = db.prepare('SELECT krw_auto_rate, krw_auto_rate_day, krw_auto_rate_updated_at FROM system_settings WHERE id = 1').get() as any
+  const row = await db.prepare('SELECT krw_auto_rate, krw_auto_rate_day, krw_auto_rate_updated_at FROM system_settings WHERE id = 1').get() as any
   return {
     rate: Number(row?.krw_auto_rate || 0),
     day: String(row?.krw_auto_rate_day || ''),
@@ -247,7 +247,7 @@ async function writeDailyRateRow(rate: number, day: string): Promise<void> {
     return
   }
   const db = getDb()
-  db.prepare(
+  await db.prepare(
     `INSERT INTO system_settings (id, krw_auto_rate, krw_auto_rate_day, krw_auto_rate_updated_at) VALUES (1, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        krw_auto_rate = excluded.krw_auto_rate,

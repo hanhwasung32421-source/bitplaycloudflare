@@ -28,10 +28,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const prev = db.prepare('SELECT chart_prefs FROM user_settings WHERE user_id = ?').get(user.id) as { chart_prefs?: string } | undefined
+  const prev = await db.prepare('SELECT chart_prefs FROM user_settings WHERE user_id = ?').get(user.id) as { chart_prefs?: string } | undefined
 
   const now = new Date().toISOString()
-  db.prepare(
+  await db.prepare(
     `INSERT INTO user_settings (user_id, trade_percent, trade_leverage, chart_prefs, updated_at)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET

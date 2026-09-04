@@ -73,7 +73,7 @@ export async function createKillEvent(input: {
   }
 
   const db = getDb()
-  const result = db
+  const result = await db
     .prepare(
       'INSERT INTO kill_events (symbol, direction, percent, base_price, shocked_price, duration_ms, tick_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     )
@@ -98,7 +98,7 @@ export async function latestKillEvent(symbol: string): Promise<KillEvent | null>
     return rows[0] ? rowToKillEvent(rows[0]) : null
   }
   const db = getDb()
-  const row = db.prepare('SELECT * FROM kill_events WHERE symbol = ? ORDER BY id DESC LIMIT 1').get(sym) as any
+  const row = await db.prepare('SELECT * FROM kill_events WHERE symbol = ? ORDER BY id DESC LIMIT 1').get(sym) as any
   return row ? rowToKillEvent(row) : null
 }
 
@@ -110,7 +110,7 @@ export async function listKillEvents(symbol: string, limit = 200): Promise<KillE
     return rows.map(rowToKillEvent)
   }
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM kill_events WHERE symbol = ? ORDER BY id DESC LIMIT ?').all(sym, limit) as any[]
+  const rows = await db.prepare('SELECT * FROM kill_events WHERE symbol = ? ORDER BY id DESC LIMIT ?').all(sym, limit) as any[]
   return rows.map(rowToKillEvent)
 }
 
@@ -121,7 +121,7 @@ export async function listAllKillEvents(limit = 100): Promise<KillEvent[]> {
     return rows.map(rowToKillEvent)
   }
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM kill_events ORDER BY id DESC LIMIT ?').all(limit) as any[]
+  const rows = await db.prepare('SELECT * FROM kill_events ORDER BY id DESC LIMIT ?').all(limit) as any[]
   return rows.map(rowToKillEvent)
 }
 
@@ -131,5 +131,5 @@ export async function deleteKillEvent(id: number): Promise<void> {
     return
   }
   const db = getDb()
-  db.prepare('DELETE FROM kill_events WHERE id = ?').run(id)
+  await db.prepare('DELETE FROM kill_events WHERE id = ?').run(id)
 }

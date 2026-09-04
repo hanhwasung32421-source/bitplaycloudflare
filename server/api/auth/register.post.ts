@@ -130,7 +130,7 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
 
-  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(body.username) as
+  const exists = await db.prepare('SELECT id FROM users WHERE username = ?').get(body.username) as
     | { id: number }
     | undefined
   if (exists?.id) {
@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const passwordHash = hashPassword(body.password)
-  db.prepare(
+  await db.prepare(
     'INSERT INTO users (username, password_hash, name, birth_date, bank_name, bank_account, account_holder, referral_code, terms_agreed_at, role, permissions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     body.username,
@@ -159,9 +159,9 @@ export default defineEventHandler(async (event) => {
     new Date().toISOString()
   )
 
-  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(body.username) as { id: number }
-  db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
-  db.prepare(
+  const user = await db.prepare('SELECT id FROM users WHERE username = ?').get(body.username) as { id: number }
+  await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
+  await db.prepare(
     'INSERT OR IGNORE INTO user_settings (user_id, trade_percent, trade_leverage, chart_prefs, updated_at) VALUES (?, ?, ?, ?, ?)'
   ).run(user.id, 50, 100, '{}', new Date().toISOString())
 
@@ -189,11 +189,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Supabase(회원 DB)에도 항상 저장(미러)
-  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as any
+  const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as any
   await syncUserToSupabase(userRow)
-  const balRow = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any
+  const balRow = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as any
   await syncBalanceToSupabase(user.id, Number(balRow?.usdt ?? 0))
-  const st = db.prepare('SELECT trade_percent, trade_leverage, chart_prefs, updated_at FROM user_settings WHERE user_id = ?').get(user.id) as any
+  const st = await db.prepare('SELECT trade_percent, trade_leverage, chart_prefs, updated_at FROM user_settings WHERE user_id = ?').get(user.id) as any
   await syncUserSettingsToSupabase(
     user.id,
     Number(st?.trade_percent ?? 50),

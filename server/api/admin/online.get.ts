@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
 
   // SQLite 모드에서는 세션 테이블 기반 온라인 구분이 구현되어 있지 않아 빈 목록 반환
   const db = getDb()
-  db.prepare('SELECT 1').get()
+  await db.prepare('SELECT 1').get()
   return { items: [] }
 })
 

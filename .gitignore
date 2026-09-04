@@ -35,3 +35,8 @@ Thumbs.db
 
 # Cloudflare Wrangler
 .wrangler
+
+# 잡파일
+127.0.0.1/
+.uploads/
+archive/

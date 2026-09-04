@@ -68,10 +68,10 @@ export default defineEventHandler(async (event) => {
     users = (userRows || []).map((u: any) => ({ ...u, online: onlineSet.has(Number(u.id)) }))
   } else {
     const db = getDb()
-    positions = db
+    positions = await db
       .prepare('SELECT id, user_id, symbol, side, qty, entry_price, leverage, margin, created_at FROM positions ORDER BY created_at DESC')
       .all()
-    users = db.prepare('SELECT id, username, role FROM users').all().map((u: any) => ({ ...u, online: false }))
+    users = (await db.prepare('SELECT id, username, role FROM users').all()).map((u: any) => ({ ...u, online: false }))
   }
 
   const userMap = new Map(users.map((u: any) => [Number(u.id), u]))

@@ -60,11 +60,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const prev = db.prepare('SELECT trade_percent, trade_leverage FROM user_settings WHERE user_id = ?').get(user.id) as any
+  const prev = await db.prepare('SELECT trade_percent, trade_leverage FROM user_settings WHERE user_id = ?').get(user.id) as any
   const now = new Date().toISOString()
   const chartPrefsText = JSON.stringify(body)
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO user_settings (user_id, trade_percent, trade_leverage, chart_prefs, updated_at)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET

@@ -37,6 +37,6 @@ export default defineEventHandler(async (event) => {
   if (!allowed.includes(body.field)) {
     throw createError({ statusCode: 400, statusMessage: '수정할 수 없는 항목입니다.' })
   }
-  db.prepare(`UPDATE positions SET ${body.field} = ? WHERE id = ?`).run(patch[body.field], body.positionId)
+  await db.prepare(`UPDATE positions SET ${body.field} = ? WHERE id = ?`).run(patch[body.field], body.positionId)
   return { ok: true }
 })

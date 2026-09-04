@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     if (admin.role !== 'super_admin') {
       const targetUsername = supabaseAppDbEnabled()
         ? String((await supaSelectOne<any>('trae_users', { id: userId }))?.username || '')
-        : String((getDb().prepare('SELECT username FROM users WHERE id = ?').get(userId) as any)?.username || '')
+        : String((await getDb().prepare('SELECT username FROM users WHERE id = ?').get(userId) as any)?.username || '')
       const downline = await fetchDownlineUsernames(admin.username)
       if (!downline.has(targetUsername)) {
         throw createError({ statusCode: 403, statusMessage: '이 회원의 거래내역을 볼 권한이 없습니다.' })
@@ -170,7 +170,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const rows = db
+  const rows = await db
     .prepare(
       `
       SELECT t.id, t.user_id, t.symbol, t.side, t.qty, t.entry_price, t.exit_price, t.leverage, t.pnl, t.liquidation, t.created_at, u.username, u.role

@@ -57,7 +57,7 @@ export async function createPasswordResetRequest(user: SessionUser, name: string
   }
 
   const db = getDb()
-  const existing = db
+  const existing = await db
     .prepare(`SELECT id FROM password_reset_requests WHERE user_id = ? AND status = 'pending' LIMIT 1`)
     .get(Number(user.id)) as any
   if (existing?.id) {
@@ -73,7 +73,7 @@ export async function createPasswordResetRequest(user: SessionUser, name: string
       read_at: null
     }
   ])
-  db.prepare(
+  await db.prepare(
     `INSERT INTO password_reset_requests (id, user_id, username_snapshot, requested_name, requested_birth_date, status, approved_by, message_id, requested_at, approved_at)
      VALUES (?, ?, ?, ?, ?, 'pending', NULL, ?, ?, NULL)`
   ).run(id, Number(user.id), user.username, name, birthDate, Number(insertedMessages[0]?.id || 0), now)
@@ -105,7 +105,7 @@ export async function getPendingResetRequestForUser(userId: number) {
   }
 
   const db = getDb()
-  const row = db
+  const row = await db
     .prepare(`SELECT * FROM password_reset_requests WHERE user_id = ? AND status = 'pending' ORDER BY requested_at DESC LIMIT 1`)
     .get(Number(userId)) as any
   return row || null
@@ -149,13 +149,13 @@ export async function approvePasswordReset(requestId: number, adminUser: Session
   }
 
   const db = getDb()
-  const req = db.prepare(`SELECT * FROM password_reset_requests WHERE id = ?`).get(Number(requestId)) as any
+  const req = await db.prepare(`SELECT * FROM password_reset_requests WHERE id = ?`).get(Number(requestId)) as any
   if (!req) throw createError({ statusCode: 404, statusMessage: '초기화 요청을 찾을 수 없습니다.' })
   if (String(req.status) !== 'pending') throw createError({ statusCode: 409, statusMessage: '이미 처리된 요청입니다.' })
 
   const newHash = hashPassword('1234')
-  db.prepare(`UPDATE users SET password_hash = ?, password_reset_required = 1, password_reset_notice_dismissed_at = NULL, updated_at = ? WHERE id = ?`).run(newHash, approvedAt, Number(req.user_id))
-  db.prepare(`UPDATE password_reset_requests SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`).run(Number(adminUser.id), approvedAt, Number(requestId))
+  await db.prepare(`UPDATE users SET password_hash = ?, password_reset_required = 1, password_reset_notice_dismissed_at = NULL, updated_at = ? WHERE id = ?`).run(newHash, approvedAt, Number(req.user_id))
+  await db.prepare(`UPDATE password_reset_requests SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?`).run(Number(adminUser.id), approvedAt, Number(requestId))
   await insertMessages([
     {
       thread_key: threadKeyForUser(Number(req.user_id)),

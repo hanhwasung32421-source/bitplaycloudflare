@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     user = (data || [])[0]
   } else {
     const db = getDb()
-    user = db
+    user = await db
       .prepare(`SELECT id, username, name, birth_date, role FROM users WHERE username = ? AND role = 'user' LIMIT 1`)
       .get(body.username)
   }

@@ -3,6 +3,8 @@
 // - instCategory '1' = 코인(암호화폐) 선물
 // - instCategory '3' = 주식/ETF/지수 토큰(미국+해외+한국 혼재) → 한국 관련 티커, ETF 티커를 각각 분리
 // - instCategory '4' = 귀금속/원자재(금/은/백금/팔라듐/구리/원유/천연가스)
+import { okxFetch } from '../upstream/okx-fetch'
+
 export type MarketInstrument = {
   symbol: string // 우리 URL에서 쓰는 형태, 예: BTCUSDT
   instId: string // OKX instId, 예: BTC-USDT-SWAP
@@ -132,9 +134,19 @@ const CACHE_MS = 20_000
 async function loadOkxSwapData() {
   if (cache && Date.now() - cache.at < CACHE_MS) return cache.data
 
+  // okxFetch 를 거치면 429 시 재시도 + 스테일 폴백이 적용됩니다.
+  // 위의 CACHE_MS(20초) 캐시와 별개로, 상류가 잠깐 막혀도 목록이 비지 않게 해 줍니다.
   const [instRes, tickerRes] = await Promise.all([
-    $fetch<any>('https://www.okx.com/api/v5/public/instruments', { query: { instType: 'SWAP' } }),
-    $fetch<any>('https://www.okx.com/api/v5/market/tickers', { query: { instType: 'SWAP' } })
+    okxFetch<any>(
+      'https://www.okx.com/api/v5/public/instruments',
+      { instType: 'SWAP' },
+      { freshMs: 60000, staleMs: 3600000 }
+    ),
+    okxFetch<any>(
+      'https://www.okx.com/api/v5/market/tickers',
+      { instType: 'SWAP' },
+      { freshMs: 10000, staleMs: 120000 }
+    )
   ])
 
   const instruments = (instRes?.data || []).filter((x: any) => x.state === 'live')

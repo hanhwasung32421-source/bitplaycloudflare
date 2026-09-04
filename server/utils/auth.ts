@@ -63,7 +63,7 @@ export async function createSessionToken(userId: number, days = 7): Promise<{ to
     })
   } else {
     const db = getDb()
-    db.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(token, userId, createdAt, expiresAt)
+    await db.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)').run(token, userId, createdAt, expiresAt)
   }
   return { token, expiresAt }
 }
@@ -95,7 +95,7 @@ export async function clearAuthSession(event: H3Event) {
       }
     } else {
       const db = getDb()
-      db.prepare('DELETE FROM sessions WHERE token = ?').run(token)
+      await db.prepare('DELETE FROM sessions WHERE token = ?').run(token)
     }
   }
   // 임퍼스네이션 헤더로 들어온 로그아웃이면 관리자 탭의 쿠키(=관리자 세션)는 절대 건드리지 않는다.
@@ -138,7 +138,7 @@ export async function getSessionUser(event: H3Event): Promise<SessionUser | null
   }
 
   const db = getDb()
-  const row = db
+  const row = await db
     .prepare(
       `
       SELECT u.id, u.username, u.name, u.birth_date, u.bank_name, u.bank_account, u.account_holder, u.referral_code, u.password_reset_required, u.password_reset_notice_dismissed_at, u.role, u.permissions

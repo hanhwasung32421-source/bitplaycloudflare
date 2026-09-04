@@ -210,12 +210,12 @@ export default defineEventHandler(async (event) => {
 
   // SQLite 모드(로컬) - 동일 정책 적용 후 Supabase로 동기화(옵션)
   const db = getDb()
-  db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
+  await db.prepare('INSERT OR IGNORE INTO balances (user_id, usdt) VALUES (?, ?)').run(user.id, 0)
 
-  const bal0 = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number }
+  const bal0 = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number }
   let usdt = Number(bal0?.usdt ?? 0)
 
-  const existing = db
+  const existing = await db
     .prepare('SELECT * FROM positions WHERE user_id = ? AND symbol = ? ORDER BY id DESC LIMIT 1')
     .get(user.id, symbol) as any
 
@@ -228,9 +228,9 @@ export default defineEventHandler(async (event) => {
     const pnl = clampPnlToLiquidation(pnlUnclamped, net0, liquidationTriggerRoe)
     const { settlementAfterFee } = calcSettlementAfterSellFee(gross0, pnl)
 
-    db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(settlementAfterFee, user.id)
-    db.prepare('DELETE FROM positions WHERE id = ? AND user_id = ?').run(existing.id, user.id)
-    db.prepare(
+    await db.prepare('UPDATE balances SET usdt = usdt + ? WHERE user_id = ?').run(settlementAfterFee, user.id)
+    await db.prepare('DELETE FROM positions WHERE id = ? AND user_id = ?').run(existing.id, user.id)
+    await db.prepare(
       'INSERT INTO trades (user_id, symbol, side, qty, entry_price, exit_price, leverage, pnl, liquidation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(
       user.id,
@@ -247,10 +247,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // 잔고 재조회(반대 포지션 청산 후 반영된 값)
-  const bal1 = db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number }
+  const bal1 = await db.prepare('SELECT usdt FROM balances WHERE user_id = ?').get(user.id) as { usdt: number }
   usdt = Number(bal1?.usdt ?? 0)
 
-  const current = db
+  const current = await db
     .prepare('SELECT * FROM positions WHERE user_id = ? AND symbol = ? ORDER BY id DESC LIMIT 1')
     .get(user.id, symbol) as any
 
@@ -265,8 +265,8 @@ export default defineEventHandler(async (event) => {
     const newEntry = weightedEntry(Number(current.entry_price || 0), oldQty, entry, qtyNew)
     const newGrossMargin = Number(current.margin || 0) + usedGross
 
-    db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(newUsdt, user.id)
-    db.prepare('UPDATE positions SET qty = ?, entry_price = ?, margin = ?, leverage = ? WHERE id = ? AND user_id = ?').run(
+    await db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(newUsdt, user.id)
+    await db.prepare('UPDATE positions SET qty = ?, entry_price = ?, margin = ?, leverage = ? WHERE id = ? AND user_id = ?').run(
       newQtyTotal,
       newEntry,
       newGrossMargin,
@@ -275,8 +275,8 @@ export default defineEventHandler(async (event) => {
       user.id
     )
 
-    const updated = db.prepare('SELECT * FROM positions WHERE id = ? AND user_id = ?').get(current.id, user.id) as any
-    const lastTrade = db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
+    const updated = await db.prepare('SELECT * FROM positions WHERE id = ? AND user_id = ?').get(current.id, user.id) as any
+    const lastTrade = await db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
     await syncPositionToSupabase(updated)
     await syncBalanceToSupabase(user.id, Number(newUsdt))
     if (lastTrade) await syncTradeToSupabase(lastTrade)
@@ -295,12 +295,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const qty = calcQty(usedNet, body.leverage, entry)
-  db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(newUsdt, user.id)
-  db.prepare(
+  await db.prepare('UPDATE balances SET usdt = ? WHERE user_id = ?').run(newUsdt, user.id)
+  await db.prepare(
     'INSERT INTO positions (user_id, symbol, side, qty, entry_price, leverage, margin, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(user.id, symbol, body.side, qty, entry, body.leverage, usedGross, new Date().toISOString())
 
-  const newPos = db.prepare('SELECT * FROM positions WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
+  const newPos = await db.prepare('SELECT * FROM positions WHERE user_id = ? ORDER BY id DESC LIMIT 1').get(user.id) as any
   await syncPositionToSupabase(newPos)
   await syncBalanceToSupabase(user.id, Number(newUsdt))
 

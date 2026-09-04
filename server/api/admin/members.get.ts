@@ -152,9 +152,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const users = db.prepare('SELECT id, username, name, birth_date, bank_name, bank_account, account_holder, referral_code, role, permissions, created_at FROM users ORDER BY id DESC').all() as any[]
-  const balances = db.prepare('SELECT user_id, usdt FROM balances').all() as any[]
-  const trades = db.prepare('SELECT user_id, pnl, entry_price, qty, leverage FROM trades').all() as any[]
+  const users = await db.prepare('SELECT id, username, name, birth_date, bank_name, bank_account, account_holder, referral_code, role, permissions, created_at FROM users ORDER BY id DESC').all() as any[]
+  const balances = await db.prepare('SELECT user_id, usdt FROM balances').all() as any[]
+  const trades = await db.prepare('SELECT user_id, pnl, entry_price, qty, leverage FROM trades').all() as any[]
   const balanceMap = new Map(balances.map((b: any) => [Number(b.user_id), Number(b.usdt ?? 0)]))
   const profitMap = new Map<number, number>()
   for (const t of trades) {

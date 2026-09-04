@@ -60,7 +60,7 @@ export async function insertGuestChatMessage(guestId: string, sender: 'guest' | 
   }
 
   const db = getDb()
-  db.prepare(
+  await db.prepare(
     `INSERT INTO guest_chats (id, guest_id, ip, sender, body, read_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(payload.id, payload.guest_id, payload.ip, payload.sender, payload.body, payload.read_at, payload.created_at)
   return rowToMessage(payload)
@@ -72,14 +72,14 @@ export async function listGuestChatThreadMessages(guestId: string): Promise<Gues
     return rows.map(rowToMessage)
   }
   const db = getDb()
-  const rows = db.prepare(`SELECT * FROM guest_chats WHERE guest_id = ? ORDER BY created_at ASC`).all(guestId) as any[]
+  const rows = await db.prepare(`SELECT * FROM guest_chats WHERE guest_id = ? ORDER BY created_at ASC`).all(guestId) as any[]
   return rows.map(rowToMessage)
 }
 
 export async function listGuestChatThreads(): Promise<GuestChatThreadSummary[]> {
   const rows = supabaseAppDbEnabled()
     ? await supaSelectWhere<any>({ table: T_GUEST_CHATS, orderBy: 'created_at', ascending: false, limit: 2000 })
-    : (getDb().prepare(`SELECT * FROM guest_chats ORDER BY created_at DESC LIMIT 2000`).all() as any[])
+    : (await getDb().prepare(`SELECT * FROM guest_chats ORDER BY created_at DESC LIMIT 2000`).all() as any[])
 
   const out = new Map<string, GuestChatThreadSummary>()
   for (const raw of rows) {
@@ -103,7 +103,7 @@ export async function markGuestChatThreadRead(guestId: string) {
     return
   }
   const db = getDb()
-  db.prepare(`UPDATE guest_chats SET read_at = ? WHERE guest_id = ? AND sender = 'guest' AND read_at IS NULL`).run(readAt, guestId)
+  await db.prepare(`UPDATE guest_chats SET read_at = ? WHERE guest_id = ? AND sender = 'guest' AND read_at IS NULL`).run(readAt, guestId)
 }
 
 export async function countUnreadGuestChats(): Promise<number> {
@@ -114,6 +114,6 @@ export async function countUnreadGuestChats(): Promise<number> {
     return Number(count || 0)
   }
   const db = getDb()
-  const row = db.prepare(`SELECT COUNT(*) as c FROM guest_chats WHERE sender = 'guest' AND read_at IS NULL`).get() as any
+  const row = await db.prepare(`SELECT COUNT(*) as c FROM guest_chats WHERE sender = 'guest' AND read_at IS NULL`).get() as any
   return Number(row?.c || 0)
 }

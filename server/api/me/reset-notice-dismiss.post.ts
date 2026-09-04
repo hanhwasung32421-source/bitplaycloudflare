@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  db.prepare(`UPDATE users SET password_reset_notice_dismissed_at = ?, updated_at = ? WHERE id = ?`).run(now, now, user.id)
-  const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as any
+  await db.prepare(`UPDATE users SET password_reset_notice_dismissed_at = ?, updated_at = ? WHERE id = ?`).run(now, now, user.id)
+  const userRow = await db.prepare('SELECT * FROM users WHERE id = ?').get(user.id) as any
   await syncUserToSupabase(userRow)
   return { ok: true }
 })

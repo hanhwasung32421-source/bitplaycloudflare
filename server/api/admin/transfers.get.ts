@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
   // SQLite 모드: 입출금 로그 테이블이 없어서 빈 목록 반환
   const db = getDb()
-  db.prepare('SELECT 1').get()
+  await db.prepare('SELECT 1').get()
   return { items: [], hasMore: false, summary: { totalInUsdt: 0, totalOutUsdt: 0 } }
 })
 

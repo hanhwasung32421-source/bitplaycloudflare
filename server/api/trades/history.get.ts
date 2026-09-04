@@ -37,8 +37,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const trades = db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(user.id, limit, offset) as any[]
-  const totalRow = db.prepare('SELECT COUNT(*) as count FROM trades WHERE user_id = ?').get(user.id) as { count: number }
+  const trades = await db.prepare('SELECT * FROM trades WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(user.id, limit, offset) as any[]
+  const totalRow = await db.prepare('SELECT COUNT(*) as count FROM trades WHERE user_id = ?').get(user.id) as { count: number }
 
   return {
     items: trades,

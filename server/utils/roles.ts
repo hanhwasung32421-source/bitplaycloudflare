@@ -48,7 +48,7 @@ async function fetchAllRoles(): Promise<RoleDefinition[]> {
     return (data || []).map(rowToRole)
   }
   const db = getDb()
-  const rows = db.prepare('SELECT * FROM admin_roles ORDER BY sort_order ASC, created_at ASC').all() as any[]
+  const rows = await db.prepare('SELECT * FROM admin_roles ORDER BY sort_order ASC, created_at ASC').all() as any[]
   return rows.map(rowToRole)
 }
 
@@ -63,7 +63,7 @@ async function seedDefaultIfEmpty(roles: RoleDefinition[]): Promise<RoleDefiniti
       await supaInsertStrict(T_ADMIN_ROLES, { id: DEFAULT_ROLE_ID, label: DEFAULT_ROLE_LABEL, menus, sort_order: 0, tier: 0, created_at: now })
     } else {
       const db = getDb()
-      db.prepare('INSERT OR IGNORE INTO admin_roles (id, label, menus, sort_order, tier, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+      await db.prepare('INSERT OR IGNORE INTO admin_roles (id, label, menus, sort_order, tier, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
         DEFAULT_ROLE_ID,
         DEFAULT_ROLE_LABEL,
         JSON.stringify(menus),
@@ -133,7 +133,7 @@ async function countUsersWithRole(id: string): Promise<number> {
     return count ?? 0
   }
   const db = getDb()
-  const row = db.prepare('SELECT COUNT(*) as c FROM users WHERE role = ?').get(id) as { c: number } | undefined
+  const row = await db.prepare('SELECT COUNT(*) as c FROM users WHERE role = ?').get(id) as { c: number } | undefined
   return Number(row?.c || 0)
 }
 
@@ -160,7 +160,7 @@ export async function createRole(id: string, label: string): Promise<RoleDefinit
     await supaInsertStrict(T_ADMIN_ROLES, { id: cleanId, label: cleanLabel, menus, sort_order: sortOrder, tier, created_at: now })
   } else {
     const db = getDb()
-    db.prepare('INSERT INTO admin_roles (id, label, menus, sort_order, tier, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+    await db.prepare('INSERT INTO admin_roles (id, label, menus, sort_order, tier, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
       cleanId,
       cleanLabel,
       JSON.stringify(menus),
@@ -188,7 +188,7 @@ export async function updateRole(id: string, patch: { label?: string; menus?: an
     if (error) throw error
   } else {
     const db = getDb()
-    db.prepare('UPDATE admin_roles SET label = ?, menus = ?, tier = ? WHERE id = ?').run(next.label, JSON.stringify(next.menus), next.tier, id)
+    await db.prepare('UPDATE admin_roles SET label = ?, menus = ?, tier = ? WHERE id = ?').run(next.label, JSON.stringify(next.menus), next.tier, id)
   }
   invalidateCache()
   return next
@@ -213,7 +213,10 @@ export async function reorderRoles(orderedIds: string[]): Promise<RoleDefinition
   } else {
     const db = getDb()
     const stmt = db.prepare('UPDATE admin_roles SET sort_order = ? WHERE id = ?')
-    cleanOrder.forEach((id, idx) => stmt.run(idx, id))
+    // D1 은 비동기라 forEach 로는 완료를 기다릴 수 없어 순차 루프로 처리합니다.
+    for (const [idx, id] of cleanOrder.entries()) {
+      await stmt.run(idx, id)
+    }
   }
   invalidateCache()
   return listRoles(true)
@@ -233,7 +236,7 @@ export async function deleteRole(id: string): Promise<void> {
     if (error) throw error
   } else {
     const db = getDb()
-    db.prepare('DELETE FROM admin_roles WHERE id = ?').run(id)
+    await db.prepare('DELETE FROM admin_roles WHERE id = ?').run(id)
   }
   invalidateCache()
 }
